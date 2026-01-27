@@ -18,9 +18,11 @@ use Packeton\Model\DownloadManager;
 use Packeton\Model\PackageManager;
 use Packeton\Package\RepTypes;
 use Packeton\Security\Provider\AuditSessionProvider;
+use Packeton\Entity\WebhookSecret;
 use Packeton\Service\JobPersister;
 use Packeton\Service\Scheduler;
 use Packeton\Service\SubRepositoryHelper;
+use Packeton\Service\WebhookSignatureValidator;
 use Packeton\Util\PacketonUtils;
 use Packeton\Webhook\HookBus;
 use Psr\Log\LoggerInterface;
@@ -150,6 +152,52 @@ class ApiController extends AbstractController
             if (!$packages = PacketonUtils::findPackagesByPayload($payload, $repo, true)) {
                 return new JsonResponse(['status' => 'error', 'message' => 'Missing or invalid payload'], 406);
             }
+        }
+
+        return $this->schedulePostJobs($packages);
+    }
+
+    #[Route('/api/hooks/github', name: 'github_secure_postreceive', methods: ['POST'])]
+    public function secureGitHubWebhookAction(Request $request, WebhookSignatureValidator $validator): Response
+    {
+        $secretRepo = $this->registry->getRepository(WebhookSecret::class);
+        $secrets = $secretRepo->findAllSecrets();
+
+        if (empty($secrets)) {
+            return new JsonResponse(['status' => 'error', 'message' => 'No webhook secrets configured'], 500);
+        }
+
+        if (!$validator->validate($request, $secrets)) {
+            $signature = $request->headers->get('X-Hub-Signature-256');
+            if (empty($signature)) {
+                return new JsonResponse(['status' => 'error', 'message' => 'Missing X-Hub-Signature-256 header'], 401);
+            }
+            return new JsonResponse(['status' => 'error', 'message' => 'Invalid signature'], 403);
+        }
+
+        if ($matchedId = $validator->getMatchedSecretId()) {
+            $secret = $secretRepo->find($matchedId);
+            if ($secret) {
+                $secret->updateLastUsedAt();
+                $this->registry->getManager()->flush();
+            }
+        }
+
+        $githubEvent = $request->headers->get('X-GitHub-Event');
+        if ($githubEvent === 'ping') {
+            return new JsonResponse(['status' => 'success', 'message' => 'Webhook configured successfully'], 200);
+        }
+
+        $payload = $this->getJsonPayload($request);
+        if (!$payload) {
+            return new JsonResponse(['status' => 'error', 'message' => 'Missing or invalid JSON payload'], 406);
+        }
+
+        $repo = $this->registry->getRepository(Package::class);
+        $packages = PacketonUtils::findPackagesByPayload($payload, $repo, true);
+
+        if (!$packages) {
+            return new JsonResponse(['status' => 'error', 'message' => 'No matching packages found'], 404);
         }
 
         return $this->schedulePostJobs($packages);
