@@ -29,7 +29,24 @@ To enable the Group GitLab webhook you must have the paid plan.
 Go to your GitLab Group > Settings > Webhooks.
 Enter `https://<app>/api/update-package?token=user:token` as URL.
 
-## GitHub Webhooks
+## GitHub Organization Webhooks (Recommended)
+
+For organization-wide webhooks, use signature-based authentication instead of exposing tokens in URLs.
+This uses GitHub's `X-Hub-Signature-256` header for secure webhook validation.
+
+**Setup:**
+1. Go to Admin UI → Webhook Secrets (`/webhook-secrets`) and create a new secret
+2. In GitHub, go to Organization Settings → Webhooks → Add webhook
+3. Configure:
+   - **Payload URL:** `https://<app>/api/hooks/github`
+   - **Content type:** `application/json`
+   - **Secret:** Enter the secret from step 1
+4. Select events (Push events recommended)
+5. Save
+
+This endpoint validates the HMAC-SHA256 signature automatically - no token required in the URL.
+
+## GitHub Webhooks (Per-Repository)
 To enable the GitHub webhook go to your GitHub repository. Click the "Settings" button, click "Webhooks".
 Add a new hook. Enter `https://<app>/api/github?token=user:token` as URL.
 

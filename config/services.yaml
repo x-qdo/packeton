@@ -234,6 +234,10 @@ services:
 
     Symfony\Component\HttpClient\NoPrivateNetworkHttpClient: ~
 
+    Symfony\Component\HttpFoundation\Session\Storage\Handler\RedisSessionHandler:
+        arguments:
+            - '@snc_redis.default'
+
     Packeton\Package\Updater:
       calls:
         - [setSerializerCachePath, ['%kernel.cache_dir%/html_purifier']]

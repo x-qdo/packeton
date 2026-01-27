@@ -33,7 +33,22 @@ composer config --global --auth http-basic.{{ app.request.getHttpHost() }} {{ ap
     <h2 class="title" id="how-to-update-packages">How to update packages?</h2>
     <section class="row">
         <section class="col-md-6">
-            <h3>GitHub Service Hook</h3>
+            <h3>GitHub Organization Webhook (Recommended)</h3>
+            <p>For organization-wide webhooks, use signature-based authentication instead of tokens in URLs.</p>
+            <p>To set up:</p>
+            <ul>
+                <li>Go to <a href="{{ path('webhook_secret_index') }}">Webhook Secrets</a> and create a new secret</li>
+                <li>In GitHub, go to Organization Settings → Webhooks</li>
+                <li>Add a new webhook with URL: <code>{{ url }}/api/hooks/github</code></li>
+                <li>Set Content type to <code>application/json</code></li>
+                <li>Enter the secret from step 1</li>
+                <li>Select events: Push, Pull Request, or "Just the push event"</li>
+            </ul>
+            <p><small>This endpoint validates using GitHub's X-Hub-Signature-256 header.</small></p>
+        </section>
+
+        <section class="col-md-6">
+            <h3>GitHub Service Hook (Per-Repository)</h3>
             <p>Enabling the Packagist service hook ensures that your package will always be updated instantly when you push to GitHub.</p>
             <p>To do so you can:</p>
             <ul>

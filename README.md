@@ -128,7 +128,7 @@ Installation
 ### Requirements
 
 - PHP 8.1+
-- Redis for some functionality (favorites, download statistics, worker queue).
+- Redis for some functionality (sessions, favorites, download statistics, worker queue).
 - git/svn/hg depending on which repositories you want to support.
 - Supervisor to run a background job worker
 - (optional) MySQL or PostgresSQL for the main data store, default SQLite
@@ -354,6 +354,7 @@ every time you push code. More simple way use group webhooks, to prevent from be
 
 | Provider  | Group webhook support | Target Path                                               |
 |-----------|-----------------------|-----------------------------------------------------------|
+| GitHub    | Yes (Secure)          | `https://example.org/api/hooks/github` (signature-based)  |
 | GitHub    | Yes                   | `https://example.org/api/github?token=`                   |
 | GitLab    | Only paid plan        | `https://example.org/api/update-package?token=`           |
 | Gitea     | Yes                   | `https://example.org/api/update-package?token=`           |
@@ -380,7 +381,21 @@ To enable the Group GitLab webhook you must have the paid plan.
 Go to your GitLab Group > Settings > Webhooks.
 Enter `https://<app>/api/update-package?token=user:token` as URL.
 
-#### GitHub Webhooks
+#### GitHub Organization Webhooks (Recommended)
+
+For organization-wide webhooks, use signature-based authentication instead of exposing tokens in URLs.
+This uses GitHub's `X-Hub-Signature-256` header for secure webhook validation.
+
+1. Go to Admin UI → Webhook Secrets and create a new secret
+2. In GitHub, go to Organization Settings → Webhooks → Add webhook
+3. Set Payload URL to `https://<app>/api/hooks/github`
+4. Set Content type to `application/json`
+5. Enter the secret from step 1
+6. Select events (Push recommended)
+
+This endpoint validates the HMAC-SHA256 signature - no token required in the URL.
+
+#### GitHub Webhooks (Per-Repository)
 To enable the GitHub webhook go to your GitHub repository. Click the "Settings" button, click "Webhooks". 
 Add a new hook. Enter `https://<app>/api/github?token=user:token` as URL.
 
