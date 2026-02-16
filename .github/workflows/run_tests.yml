@@ -28,22 +28,65 @@ jobs:
           - php: '8.1'
             driver: 'SQLITE'
             redis: 6
+            postgres: 16
+            mysql: '8.4'
             symfony: '6.4.*'
           - php: '8.2'
             driver: 'PGSQL'
             redis: 6
+            postgres: 16
+            mysql: '8.4'
             symfony: '6.4.*'
           - php: '8.3'
             driver: 'MYSQL'
             redis: 6
+            postgres: 16
+            mysql: '8.4'
             symfony: '6.4.*'
           - php: '8.4'
             driver: 'SQLITE'
             redis: 7
+            postgres: 16
+            mysql: '8.4'
             symfony: '7.2.*'
             composer_flags: '--ignore-platform-reqs'
     name: PHP ${{ matrix.php }} ${{ matrix.driver }} SF ${{ matrix.symfony }}
     runs-on: ubuntu-22.04
+
+    services:
+      redis:
+        image: redis:${{ matrix.redis }}
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      postgres:
+        image: postgres:${{ matrix.postgres }}
+        env:
+          POSTGRES_PASSWORD: '123456'
+          POSTGRES_DB: packeton
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      mysql:
+        image: mysql:${{ matrix.mysql }}
+        env:
+          MYSQL_ROOT_PASSWORD: '123456'
+          MYSQL_DATABASE: packeton
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd "mysqladmin ping -h 127.0.0.1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
       - name: "Checkout"
@@ -57,22 +100,6 @@ jobs:
           php-version: ${{ matrix.php }}
           tools: composer
 
-      - name: "Install Postgres"
-        if: ${{ matrix.driver=='PGSQL' }}
-        uses: harmon758/postgresql-action@v1
-        with:
-          postgresql version: '14'
-          postgresql password: '123456'
-          postgresql db: 'packeton'
-
-      - name: "Install MySql"
-        if: ${{ matrix.driver=='MYSQL' }}
-        uses: mirromutth/mysql-action@v1.1
-        with:
-          mysql version: '8.0'
-          mysql database: 'packeton'
-          mysql root password: '123456'
-
       - name: "Install dependencies"
         run: |
           set -x
@@ -83,11 +110,6 @@ jobs:
           else
             composer install --ansi --no-interaction ${{ matrix.composer_flags }}
           fi
-      - name: Start Redis
-        uses: "supercharge/redis-github-action@1.8.0"
-        with:
-          redis-version: ${{ matrix.redis }}
-
       - name: "Prepare Postgres"
         if: ${{ matrix.driver=='PGSQL' }}
         run: |

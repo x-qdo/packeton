@@ -168,7 +168,7 @@ class MirrorController extends AbstractController
 
         if (false === $config->isPublicAccess()) {
             if (null !== $this->getUser()) {
-                if (!$this->isGranted('ROLE_MAINTAINER') && !$this->isGranted('VIEW', new ObjectIdentity($alias, ProxyRepositoryInterface::class))) {
+                if (!$this->isGranted('ROLE_FULL_CUSTOMER') && !$this->isGranted('VIEW', new ObjectIdentity($alias, ProxyRepositoryInterface::class))) {
                     throw $this->createAccessDeniedException();
                 }
             } else {
