@@ -1,0 +1,64 @@
+{% extends "layout.html.twig" %}
+
+{% block content %}
+<h2 class="title">Webhook Secrets</h2>
+<p class="lead">
+    System-level secrets for signature-based webhook authentication (GitHub X-Hub-Signature-256).
+</p>
+
+<div style="margin-bottom: 20px;">
+    <a class="btn btn-primary" href="{{ path('webhook_secret_create') }}">Create New Secret</a>
+</div>
+
+{% for message in app.flashes('success') %}
+    <div class="alert alert-success">{{ message }}</div>
+{% endfor %}
+{% for message in app.flashes('error') %}
+    <div class="alert alert-danger">{{ message }}</div>
+{% endfor %}
+
+<section class="row">
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Secret (masked)</th>
+                <th>Created</th>
+                <th>Last Used</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for secret in secrets %}
+            <tr>
+                <td>{{ secret.name }}</td>
+                <td><code>{{ secret.secret[:8] }}...{{ secret.secret[-4:] }}</code></td>
+                <td>{{ secret.createdAt|date('Y-m-d H:i') }}</td>
+                <td>{{ secret.lastUsedAt ? secret.lastUsedAt|date('Y-m-d H:i') : 'Never' }}</td>
+                <td>
+                    <form method="post" action="{{ path('webhook_secret_delete', {id: secret.id}) }}" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this secret?');">
+                        <input type="hidden" name="_token" value="{{ csrf_token('webhook_secret_delete') }}">
+                        <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                    </form>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="5" class="text-center">No webhook secrets configured yet.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</section>
+
+<section class="row">
+    <h3>Usage</h3>
+    <p>Use the endpoint <code>{{ app.request.schemeAndHttpHost }}/api/hooks/github</code> with GitHub Organization Webhooks.</p>
+    <p>Configure your GitHub webhook with:</p>
+    <ul>
+        <li><strong>Payload URL:</strong> <code>{{ app.request.schemeAndHttpHost }}/api/hooks/github</code></li>
+        <li><strong>Content type:</strong> <code>application/json</code></li>
+        <li><strong>Secret:</strong> Copy the secret when creating it (shown only once)</li>
+    </ul>
+</section>
+{% endblock %}
