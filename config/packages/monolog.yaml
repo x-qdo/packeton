@@ -7,7 +7,7 @@ when@dev:
         handlers:
             main:
                 type: stream
-                path: "%kernel.logs_dir%/%kernel.environment%.log"
+                path: "php://stderr"
                 level: debug
                 channels: ["!event"]
             console:
@@ -39,7 +39,7 @@ when@prod:
                 excluded_http_codes: [401, 403, 404, 405]
             nested:
                 type: stream
-                path: "%kernel.logs_dir%/%kernel.environment%.log"
+                path: "php://stderr"
                 level: error
             console:
                 type: console
