@@ -150,7 +150,7 @@ class BitbucketIntegration implements IntegrationInterface, LoginInterface, AppI
     {
         $organizations = $this->getCached($app, 'orgs', callback: function () use ($app) {
             $accessToken = $this->refreshToken($app);
-            return $this->makeCGetRequest($accessToken, '/workspaces');
+            return $this->makeCGetRequest($accessToken, '/user/workspaces');
         });
 
         return $this->processOrganizations($organizations);
@@ -159,8 +159,8 @@ class BitbucketIntegration implements IntegrationInterface, LoginInterface, AppI
     protected function processOrganizations(array $organizations): array
     {
         return array_map(function ($org) {
-            $org['logo'] = $org['links']['avatar']['href'] ?? null;
-            $org['identifier'] = $org['slug'];
+            $org['logo'] = $org['workspace']['links']['avatar']['href'] ?? null;
+            $org['identifier'] = $org['workspace']['slug'];
             return $org;
         }, $organizations);
     }
